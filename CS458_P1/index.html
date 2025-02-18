@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login Page</title>
+  <style>
+    /* Basic Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #3498db, #8e44ad);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #444;
+    }
+
+    .login-container {
+      background: #ffffffcc;
+      padding: 2rem;
+      width: 350px;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 0.6s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      0% {opacity: 0; transform: translateY(-10px);}
+      100% {opacity: 1; transform: translateY(0);}
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .btn-login {
+      background: #3498db;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .btn-login:hover {
+      background: #2980b9;
+    }
+
+    /* Social login buttons */
+    .social-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    .btn-google {
+      background: #EA4335;
+      color: #fff;
+    }
+
+    .btn-google:hover {
+      background: #c2332a;
+    }
+
+    .btn-facebook {
+      background: #4267B2;
+      color: #fff;
+    }
+
+    .btn-facebook:hover {
+      background: #2f4c83;
+    }
+
+    .message {
+      margin-top: 1rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .error {
+      color: #e74c3c;
+    }
+
+    .success {
+      color: #27ae60;
+    }
+  </style>
+
+  <!-- Load Google Sign-In -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+
+</head>
+<body>
+
+  <div class="login-container">
+    <h2>Sign In</h2>
+
+    <!-- Email/Phone Field -->
+    <div class="form-group">
+      <label for="emailInput">Email or Phone Number</label>
+      <input type="text" id="emailInput" placeholder="Enter your email or phone" />
+    </div>
+
+    <!-- Password Field -->
+    <div class="form-group">
+      <label for="passwordInput">Password</label>
+      <input type="password" id="passwordInput" placeholder="Enter your password" />
+    </div>
+
+    <!-- Login Button -->
+    <button class="btn btn-login" onclick="handleLogin()">Login</button>
+
+    <!-- Social Logins -->
+    <div class="social-btns">
+      <!-- Google Login -->
+      <div id="g_id_onload"
+          data-client_id="162703370473-6oi9itfkjjqbj5c8paq78q9j2pold32a.apps.googleusercontent.com"
+          data-context="signin"
+          data-callback="handleCredentialResponse"
+          data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+          data-type="standard"
+          data-shape="rectangular"
+          data-theme="outline"
+          data-text="signin_with"
+          data-size="large"
+          data-logo_alignment="left">
+      </div>
+
+      <!-- Mock Facebook Login -->
+      <button class="btn btn-facebook" onclick="mockFacebookLogin()">Login with Facebook</button>
+    </div>
+
+    <!-- Feedback message -->
+    <div id="message" class="message"></div>
+    
+  </div>
+
+  <script>
+    // Mock user data for demonstration
+    const mockUsers = [
+      { emailOrPhone: "john@example.com", password: "12345" },
+      { emailOrPhone: "5551234567", password: "phonePass" }
+    ];
+
+    // Handle standard login
+    function handleLogin() {
+      const emailInput = document.getElementById("emailInput");
+      const passwordInput = document.getElementById("passwordInput");
+      const messageDiv = document.getElementById("message");
+
+      messageDiv.textContent = "";
+      messageDiv.className = "message";
+
+      const emailValue = emailInput.value.trim();
+      const passwordValue = passwordInput.value.trim();
+
+      if (!emailValue || !passwordValue) {
+        messageDiv.textContent = "Error: Email/Phone and Password are required.";
+        messageDiv.classList.add("error");
+        return;
+      }
+
+      const foundUser = mockUsers.find(
+        (user) =>
+          user.emailOrPhone === emailValue && user.password === passwordValue
+      );
+
+      if (foundUser) {
+        messageDiv.textContent = "Login Successful! Welcome!";
+        messageDiv.classList.add("success");
+      } else {
+        messageDiv.textContent = "Invalid credentials. Please try again.";
+        messageDiv.classList.add("error");
+      }
+    }
+
+    // Handle Google Sign-In Response
+    function handleCredentialResponse(response) {
+      console.log("Google ID Token:", response.credential);
+      
+      const messageDiv = document.getElementById("message");
+      messageDiv.textContent = "Google sign-in successful!";
+      messageDiv.className = "message success";
+      
+      // Decode JWT (optional: if you want user details)
+      const payload = parseJwt(response.credential);
+      console.log("Google User Info:", payload);
+    }
+
+    // Decode JWT (to extract user details)
+    function parseJwt(token) {
+      try {
+        return JSON.parse(atob(token.split('.')[1]));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Mock Facebook Login
+    function mockFacebookLogin() {
+      const messageDiv = document.getElementById("message");
+      messageDiv.textContent = "Facebook sign-in successful.";
+      messageDiv.className = "message success";
+      console.log("Facebook login simulated.");
+    }
+  </script>
+
+</body>
+</html>
