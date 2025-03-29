@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'login_page.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -83,22 +84,30 @@ class _HomePage extends State<HomePage> {
     }
   }
 
-  // Logout Method
   void _logout() async {
-    // Here you can clear the state or perform any necessary cleanup
-    // For example, if you're using SharedPreferences to store user data:
-    // SharedPreferences.getInstance().then((prefs) {
-    //   prefs.remove('user_logged_in');
-    // });
+    // Sign out from Google
+    try {
+      await GoogleSignIn().signOut();
+      print("Google Sign-In: Logged out successfully");
 
-    // Delay navigation to ensure the widget is still mounted
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      // Now navigate to the Login screen
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      print("Error logging out from Google: $e");
+      // Handle logout error (optional)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to log out from Google: $e")),
+        );
+      }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
