@@ -27,12 +27,20 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      }
     } catch (e) {
       print("Error during Google Sign-In: $e"); // Add error logging
-      setState(() {
-        message = "Google Sign-In failed. Try again.";
-      });
+      if (mounted) {
+        setState(() {
+          message = "Google Sign-In failed. Try again.";
+        });
+      }
     }
   }
 
@@ -43,9 +51,10 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     // Navigate to HomePage after successful login
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+    if (mounted) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+    }
   }
-
 
   /// **Mock Email/Password Login**
   void handleMockLogin() {
@@ -55,12 +64,13 @@ class _LoginPageState extends State<LoginPage> {
     if (email.isEmpty || password.isEmpty) {
       setState(() => message = "Email/Password required!");
     } else if (email == "test@example.com" && password == "12345") {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+      if (mounted) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+      }
     } else {
       setState(() => message = "Invalid credentials!");
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -82,12 +92,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
         child: Center(
           child: Container(
-            padding: EdgeInsets.all(20), // Padding inside container
+            padding: const EdgeInsets.all(20), // Padding inside container
             width: containerWidth,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.8), // Semi-transparent white background
               borderRadius: BorderRadius.circular(8), // Rounded corners
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20)], // Box shadow
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 20)], // Box shadow
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -133,14 +143,14 @@ class _LoginPageState extends State<LoginPage> {
                 // Error Message
                 if (message.isNotEmpty)
                   Padding(
-                    padding: EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       message,
                       style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                     ),
                   ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Login Button
                 SizedBox(
@@ -153,13 +163,13 @@ class _LoginPageState extends State<LoginPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4), // Rounded button corners
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 15),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
                     child: const Text("Login", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Social Login Row
                 Row(
@@ -168,7 +178,7 @@ class _LoginPageState extends State<LoginPage> {
                     // Google Login Button (Image Asset)
                     GestureDetector(
                       onTap: signInWithGoogle,
-                      child: Container(
+                      child: SizedBox(
                         width: 180, // Fixed width for Google button
                         height: buttonHeight,
                         child: Image.asset(
@@ -177,7 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
 
                     // Facebook Login Button
                     GestureDetector(
@@ -203,6 +213,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
-
 }

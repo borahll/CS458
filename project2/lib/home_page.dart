@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'login_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -52,13 +53,18 @@ class _HomePage extends State<HomePage> {
 
     try {
       await send(message, smtpServer);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Survey sent successfully!")),
-      );
+      if (mounted) {
+        // Ensuring context is available before showing the Snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Survey sent successfully!")),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to send survey: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to send survey: $e")),
+        );
+      }
     }
   }
 
@@ -78,18 +84,20 @@ class _HomePage extends State<HomePage> {
   }
 
   // Logout Method
-  void _logout() {
+  void _logout() async {
     // Here you can clear the state or perform any necessary cleanup
     // For example, if you're using SharedPreferences to store user data:
     // SharedPreferences.getInstance().then((prefs) {
     //   prefs.remove('user_logged_in');
     // });
 
-    // Navigate to the Login screen (replace with your Login screen)
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
+    // Delay navigation to ensure the widget is still mounted
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
   }
 
   @override
@@ -189,19 +197,17 @@ class _HomePage extends State<HomePage> {
               const SizedBox(height: 10),
               ...selectedModels.map((model) {
                 return TextFormField(
-                  decoration:
-                  InputDecoration(labelText: "Cons for $model (if any)"),
+                  decoration: InputDecoration(labelText: "Cons for $model (if any)"),
                   onChanged: (value) {
                     setState(() {
                       modelCons[model] = value;
                     });
                   },
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 10),
               TextFormField(
-                decoration:
-                const InputDecoration(labelText: "AI Use Case in Daily Life"),
+                decoration: const InputDecoration(labelText: "AI Use Case in Daily Life"),
                 onChanged: (value) {
                   setState(() {
                     aiUseCase = value;
