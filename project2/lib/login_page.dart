@@ -4,6 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -13,7 +15,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   String message = '';
 
-  /// **Google Sign-In with Firebase**
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -28,11 +29,23 @@ class _LoginPageState extends State<LoginPage> {
       await FirebaseAuth.instance.signInWithCredential(credential);
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
     } catch (e) {
+      print("Error during Google Sign-In: $e"); // Add error logging
       setState(() {
         message = "Google Sign-In failed. Try again.";
       });
     }
   }
+
+  /// **Mock Facebook Login**
+  void mockFacebookLogin() {
+    setState(() {
+      message = "Facebook login (mock) successful!";
+    });
+
+    // Navigate to HomePage after successful login
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomePage()));
+  }
+
 
   /// **Mock Email/Password Login**
   void handleMockLogin() {
@@ -48,86 +61,148 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  /// **Mock Facebook Login**
-  void mockFacebookLogin() {
-    setState(() => message = "Facebook login (mock) successful!");
-  }
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    const double containerWidth = 350; // Fixed width for container
+    final double buttonHeight = screenHeight * 0.06;
+
     return Scaffold(
-      backgroundColor: Colors.blueAccent,
-      body: Center(
-        child: Container(
-          padding: EdgeInsets.all(20),
-          width: 350,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+      body: Container(
+        // Gradient background
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF3498db), Color(0xFF8e44ad)], // Your gradient colors
+            stops: [0.0, 1.0], // To control the gradient transition
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Sign In", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              SizedBox(height: 20),
+        ),
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(20), // Padding inside container
+            width: containerWidth,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8), // Semi-transparent white background
+              borderRadius: BorderRadius.circular(8), // Rounded corners
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20)], // Box shadow
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Sign In Header
+                Text(
+                  "Sign In",
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.07,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.02),
 
-              // Email Input
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: "Email or Phone"),
-              ),
-
-              // Password Input
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: "Password"),
-              ),
-
-              // Error Message
-              if (message.isNotEmpty)
+                // Email Input
                 Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(message, style: const TextStyle(color: Colors.red)),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: "Email or Phone",
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                    ),
+                  ),
                 ),
 
-              const SizedBox(height: 20),
-
-              // Login Button
-              ElevatedButton(
-                onPressed: handleMockLogin,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                child: const Text("Login", style: TextStyle(color: Colors.white)),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Google & Facebook Login
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: signInWithGoogle,
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text("Google", style: TextStyle(color: Colors.white)),
+                // Password Input
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: "Password",
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                     ),
                   ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: mockFacebookLogin,
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[800]),
-                      child: const Text("Facebook", style: TextStyle(color: Colors.white)),
+                ),
+
+                // Error Message
+                if (message.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text(
+                      message,
+                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                     ),
                   ),
-                ],
-              ),
-            ],
+
+                SizedBox(height: 20),
+
+                // Login Button
+                SizedBox(
+                  width: 300, // Fixed button width
+                  height: buttonHeight,
+                  child: ElevatedButton(
+                    onPressed: handleMockLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4), // Rounded button corners
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    child: const Text("Login", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+
+                SizedBox(height: 20),
+
+                // Social Login Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Google Login Button (Image Asset)
+                    GestureDetector(
+                      onTap: signInWithGoogle,
+                      child: Container(
+                        width: 180, // Fixed width for Google button
+                        height: buttonHeight,
+                        child: Image.asset(
+                          'assets/signin-assets/iOS/png@1x/dark/ios_dark_rd_ctn@1x.png',
+                          fit: BoxFit.contain, // Adjust to fit the container
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+
+                    // Facebook Login Button
+                    GestureDetector(
+                      onTap: mockFacebookLogin,
+                      child: Container(
+                        width: 120, // Fixed width for Facebook button
+                        height: buttonHeight,
+                        decoration: BoxDecoration(
+                          color: Colors.blue[800], // Facebook blue
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Center(
+                          child: Text("Facebook", style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+
 }

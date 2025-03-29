@@ -1,0 +1,2 @@
+/Users/borahaliloglu/Desktop/MacBook/CS4/CS4-2/CS458/CS458/project2/android/app/.cxx/Debug/2f61i6g1/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/borahaliloglu/Desktop/MacBook/CS4/CS4-2/CS458/CS458/project2/android/app/.cxx/Debug/2f61i6g1/arm64-v8a/CMakeFiles/rebuild_cache.dir
