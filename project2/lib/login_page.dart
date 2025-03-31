@@ -1,3 +1,4 @@
+// ✅ Final login_page.dart with added ValueKeys only:
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -20,7 +21,8 @@ class _LoginPageState extends State<LoginPage> {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return; // User canceled sign-in
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -52,7 +54,8 @@ class _LoginPageState extends State<LoginPage> {
 
     // Navigate to HomePage after successful login
     if (mounted) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
 
@@ -65,7 +68,8 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => message = "Email/Password required!");
     } else if (email == "test@example.com" && password == "12345") {
       if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const HomePage()));
       }
     } else {
       setState(() => message = "Invalid credentials!");
@@ -86,7 +90,10 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF3498db), Color(0xFF8e44ad)], // Your gradient colors
+            colors: [
+              Color(0xFF3498db),
+              Color(0xFF8e44ad)
+            ], // Your gradient colors
             stops: [0.0, 1.0], // To control the gradient transition
           ),
         ),
@@ -95,9 +102,12 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.all(20), // Padding inside container
             width: containerWidth,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8), // Semi-transparent white background
+              color: Colors.white
+                  .withOpacity(0.8), // Semi-transparent white background
               borderRadius: BorderRadius.circular(8), // Rounded corners
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 20)], // Box shadow
+              boxShadow: const [
+                BoxShadow(color: Colors.black26, blurRadius: 20)
+              ], // Box shadow
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -117,11 +127,13 @@ class _LoginPageState extends State<LoginPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: TextField(
+                    key: const ValueKey("EmailField"),
                     controller: emailController,
                     decoration: const InputDecoration(
                       labelText: "Email or Phone",
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                     ),
                   ),
                 ),
@@ -130,12 +142,14 @@ class _LoginPageState extends State<LoginPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: TextField(
+                    key: const ValueKey("PasswordField"),
                     controller: passwordController,
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: "Password",
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                     ),
                   ),
                 ),
@@ -146,7 +160,8 @@ class _LoginPageState extends State<LoginPage> {
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       message,
-                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.bold),
                     ),
                   ),
 
@@ -154,6 +169,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Login Button
                 SizedBox(
+                  key: const ValueKey("EmailLoginButton"),
                   width: 300, // Fixed button width
                   height: buttonHeight,
                   child: ElevatedButton(
@@ -161,11 +177,14 @@ class _LoginPageState extends State<LoginPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4), // Rounded button corners
+                        borderRadius:
+                            BorderRadius.circular(4), // Rounded button corners
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
-                    child: const Text("Login", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text("Login",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
 
@@ -177,6 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     // Google Login Button (Image Asset)
                     GestureDetector(
+                      key: const ValueKey("GoogleLoginButton"),
                       onTap: signInWithGoogle,
                       child: SizedBox(
                         width: 180, // Fixed width for Google button
@@ -191,6 +211,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     // Facebook Login Button
                     GestureDetector(
+                      key: const ValueKey("FacebookLoginButton"),
                       onTap: mockFacebookLogin,
                       child: Container(
                         width: 120, // Fixed width for Facebook button
@@ -200,7 +221,8 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Center(
-                          child: Text("Facebook", style: TextStyle(color: Colors.white)),
+                          child: Text("Facebook",
+                              style: TextStyle(color: Colors.white)),
                         ),
                       ),
                     ),

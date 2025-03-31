@@ -1,3 +1,4 @@
+// ✅ Final home_page.dart with added ValueKeys only:
 import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
@@ -27,19 +28,20 @@ class _HomePage extends State<HomePage> {
 
   bool get isFormValid =>
       nameSurname != null &&
-          birthDate != null &&
-          educationLevel != null &&
-          city != null &&
-          gender != null &&
-          selectedModels.isNotEmpty &&
-          aiUseCase != null;
+      birthDate != null &&
+      educationLevel != null &&
+      city != null &&
+      gender != null &&
+      selectedModels.isNotEmpty &&
+      aiUseCase != null;
 
   Future<void> _sendEmail() async {
-    final smtpServer = gmail('borahaliloglu03@gmail.com', 'igzl qydy zzgn ckei'); // Use App Password
+    final smtpServer =
+        gmail('borahaliloglu03@gmail.com', 'igzl qydy zzgn ckei');
 
     final message = Message()
-      ..from = const Address('borahaliloglu03@yahoo.com', 'cs458') // Change to your email
-      ..recipients.add('example@gmail.com') // Recipient email
+      ..from = const Address('borahaliloglu03@yahoo.com', 'cs458')
+      ..recipients.add('example@gmail.com')
       ..subject = 'AI Survey Response'
       ..text = """
       Name-Surname: $nameSurname
@@ -55,7 +57,6 @@ class _HomePage extends State<HomePage> {
     try {
       await send(message, smtpServer);
       if (mounted) {
-        // Ensuring context is available before showing the Snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Survey sent successfully!")),
         );
@@ -85,12 +86,8 @@ class _HomePage extends State<HomePage> {
   }
 
   void _logout() async {
-    // Sign out from Google
     try {
       await GoogleSignIn().signOut();
-      print("Google Sign-In: Logged out successfully");
-
-      // Now navigate to the Login screen
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -98,8 +95,6 @@ class _HomePage extends State<HomePage> {
         );
       }
     } catch (e) {
-      print("Error logging out from Google: $e");
-      // Handle logout error (optional)
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Failed to log out from Google: $e")),
@@ -108,16 +103,16 @@ class _HomePage extends State<HomePage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        key: const ValueKey("Survey Form"),
         title: const Text("Survey Form"),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: _logout, // Logout button action
+            onPressed: _logout,
           ),
         ],
       ),
@@ -128,12 +123,9 @@ class _HomePage extends State<HomePage> {
           child: ListView(
             children: [
               TextFormField(
+                key: const ValueKey("NameSurnameField"),
                 decoration: const InputDecoration(labelText: "Name-Surname"),
-                onChanged: (value) {
-                  setState(() {
-                    nameSurname = value;
-                  });
-                },
+                onChanged: (value) => setState(() => nameSurname = value),
               ),
               const SizedBox(height: 10),
               ListTile(
@@ -145,48 +137,40 @@ class _HomePage extends State<HomePage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
+                key: const ValueKey("EducationDropdown"),
                 decoration: const InputDecoration(labelText: "Education Level"),
                 items: ["High School", "Bachelor", "Master", "PhD"]
                     .map((level) => DropdownMenuItem(
-                  value: level,
-                  child: Text(level),
-                ))
+                          value: level,
+                          child: Text(level, key: ValueKey("${level}Option")),
+                        ))
                     .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    educationLevel = value;
-                  });
-                },
+                onChanged: (value) => setState(() => educationLevel = value),
               ),
               const SizedBox(height: 10),
               TextFormField(
+                key: const ValueKey("CityField"),
                 decoration: const InputDecoration(labelText: "City"),
-                onChanged: (value) {
-                  setState(() {
-                    city = value;
-                  });
-                },
+                onChanged: (value) => setState(() => city = value),
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
+                key: const ValueKey("GenderDropdown"),
                 decoration: const InputDecoration(labelText: "Gender"),
                 items: ["Male", "Female", "Other"]
                     .map((gender) => DropdownMenuItem(
-                  value: gender,
-                  child: Text(gender),
-                ))
+                          value: gender,
+                          child: Text(gender, key: ValueKey("${gender}Option")),
+                        ))
                     .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    gender = value;
-                  });
-                },
+                onChanged: (value) => setState(() => gender = value),
               ),
               const SizedBox(height: 10),
               const Text("AI Models Tried (Select Multiple)"),
               Column(
                 children: aiModels.map((model) {
                   return CheckboxListTile(
+                    key: ValueKey("${model}Checkbox"),
                     title: Text(model),
                     value: selectedModels.contains(model),
                     onChanged: (isChecked) {
@@ -206,32 +190,30 @@ class _HomePage extends State<HomePage> {
               const SizedBox(height: 10),
               ...selectedModels.map((model) {
                 return TextFormField(
-                  decoration: InputDecoration(labelText: "Cons for $model (if any)"),
-                  onChanged: (value) {
-                    setState(() {
-                      modelCons[model] = value;
-                    });
-                  },
+                  key: ValueKey("${model}ConsField"),
+                  decoration:
+                      InputDecoration(labelText: "Cons for $model (if any)"),
+                  onChanged: (value) =>
+                      setState(() => modelCons[model] = value),
                 );
               }),
               const SizedBox(height: 10),
               TextFormField(
-                decoration: const InputDecoration(labelText: "AI Use Case in Daily Life"),
-                onChanged: (value) {
-                  setState(() {
-                    aiUseCase = value;
-                  });
-                },
+                key: const ValueKey("AIUseCaseField"),
+                decoration: const InputDecoration(
+                    labelText: "AI Use Case in Daily Life"),
+                onChanged: (value) => setState(() => aiUseCase = value),
                 maxLines: 3,
               ),
               const SizedBox(height: 20),
               Visibility(
                 visible: isFormValid,
                 child: ElevatedButton(
+                  key: const ValueKey("SendSurveyButton"),
                   onPressed: isFormValid ? _sendEmail : null,
                   style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                          (states) => isFormValid ? Colors.blue : Colors.grey,
+                      (states) => isFormValid ? Colors.blue : Colors.grey,
                     ),
                   ),
                   child: const Text("Send"),
