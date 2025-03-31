@@ -1,0 +1,8 @@
+{
+  "name": "automation_tests",
+  "packageManager": "yarn@4.6.0",
+  "devDependencies": {
+    "appium": "^2.17.1",
+    "appium-flutter-driver": "^2.14.2"
+  }
+}
