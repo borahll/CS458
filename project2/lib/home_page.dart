@@ -129,6 +129,7 @@ class _HomePage extends State<HomePage> {
               ),
               const SizedBox(height: 10),
               ListTile(
+                key: const ValueKey("BirthDateField"),
                 title: Text(birthDate == null
                     ? "Select Birth Date"
                     : "${birthDate!.toLocal()}".split(' ')[0]),

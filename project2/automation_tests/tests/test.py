@@ -3,24 +3,28 @@ import time
 from appium import webdriver
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.common.exceptions import NoSuchElementException
+from appium.options.android import UiAutomator2Options
+import os
+from appium.options.common import AppiumOptions
 
 class TestSurveyApp(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         """
         Called once before all tests. Sets up the Appium driver and waits for the app to launch.
         """
-        desired_caps = {
-            "platformName": "Android",
-            "deviceName": "emulator-5554",
-            "automationName": "Flutter",  # Using the Flutter driver
-            "app": "../../build/app/outputs/apk/debug/app-debug.apk",
-            "newCommandTimeout": 300
-        }
-        cls.driver = webdriver.Remote("http://localhost:4723/wd/hub", desired_caps)
-        # Give the app some time to launch
-        time.sleep(5)
+        options = AppiumOptions()
+        options.set_capability("platformName", "Android")
+        options.set_capability("deviceName", "emulator-5554")
+        options.set_capability("automationName", "Flutter")
+        apk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../project2/build/app/outputs/apk/debug/app-debug.apk"))
+        options.set_capability("app", apk_path)
+        options.set_capability("newCommandTimeout", 300)
 
+        cls.driver = webdriver.Remote("http://localhost:4723", options=options)
+        time.sleep(5)
+        
     @classmethod
     def tearDownClass(cls):
         """
