@@ -3,6 +3,7 @@
   "packageManager": "yarn@4.6.0",
   "devDependencies": {
     "appium": "^2.17.1",
-    "appium-flutter-driver": "^2.14.2"
+    "appium-flutter-driver": "^2.14.2",
+    "appium-uiautomator2-driver": "^4.1.5"
   }
 }

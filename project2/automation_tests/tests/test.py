@@ -3,8 +3,10 @@ import time
 import os
 from appium import webdriver
 from appium.options.common import AppiumOptions
+
 from appium_flutter_finder import FlutterFinder, FlutterElement
 from selenium.common.exceptions import NoSuchElementException
+
 
 class TestSurveyApp(unittest.TestCase):
 
@@ -17,6 +19,7 @@ class TestSurveyApp(unittest.TestCase):
         options = AppiumOptions()
         options.set_capability("platformName", "Android")
         options.set_capability("deviceName", "emulator-5554")
+
         options.set_capability("automationName", "Flutter")
 
         apk_path = os.path.abspath(
@@ -56,7 +59,9 @@ class TestSurveyApp(unittest.TestCase):
         raw_finder = self.finder.by_value_key(key_name)
         return FlutterElement(self.driver, raw_finder)
 
+
     def element_exists(self, key_name, wait_seconds=3):
+
         """
         Returns True if the widget with the given ValueKey is found
         within `wait_seconds`, else False.
