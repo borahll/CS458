@@ -6,6 +6,7 @@ from selenium.common.exceptions import NoSuchElementException
 from appium.options.android import UiAutomator2Options
 import os
 from appium.options.common import AppiumOptions
+from selenium.webdriver.support.ui import WebDriverWait
 
 class TestSurveyApp(unittest.TestCase):
 
@@ -17,8 +18,8 @@ class TestSurveyApp(unittest.TestCase):
         options = AppiumOptions()
         options.set_capability("platformName", "Android")
         options.set_capability("deviceName", "emulator-5554")
-        options.set_capability("automationName", "Flutter")
-        apk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../project2/build/app/outputs/apk/debug/app-debug.apk"))
+        options.set_capability("automationName", "UiAutomator2")
+        apk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "/Users/borahaliloglu/Desktop/MacBook/CS4/CS4-2/CS458/CS458/project2/build/app/outputs/apk/debug/app-debug.apk"))
         options.set_capability("app", apk_path)
         options.set_capability("newCommandTimeout", 300)
 
@@ -37,6 +38,44 @@ class TestSurveyApp(unittest.TestCase):
         Helper method to do a simple sleep-based wait (in seconds).
         """
         time.sleep(sec)
+
+
+    def test_email_login(self):
+        wait = WebDriverWait(self.driver, 10)
+
+        # Locate the email input field using the Android UIAutomator locator with AppiumBy
+        email_field = wait.until(lambda driver: driver.find_element(
+            AppiumBy.ANDROID_UIAUTOMATOR,
+            'new UiSelector().description("Email Input Field")'
+        ))
+        email_field.send_keys("test@example.com")
+
+        # Locate the password input field
+        password_field = wait.until(lambda driver: driver.find_element(
+            AppiumBy.ANDROID_UIAUTOMATOR,
+            'new UiSelector().description("Password Input Field")'
+        ))
+        password_field.send_keys("12345")
+
+        # Locate and tap the login button
+        login_button = wait.until(lambda driver: driver.find_element(
+            AppiumBy.ANDROID_UIAUTOMATOR,
+            'new UiSelector().description("Email Login Button")'
+        ))
+        login_button.click()
+
+        # Optionally, wait for the next page or confirmation element to appear
+        self.wait(3)
+
+
+
+
+
+
+
+
+
+
 
     def test_google_login_and_navigation(self):
         """

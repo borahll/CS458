@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Survey Designer</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f4f4;
+      margin: 0; padding: 0;
+    }
+    header {
+      background: #3498db;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 1rem;
+      gap: 1rem;
+    }
+    /* Left: question list */
+    #questionList {
+      flex: 1 1 200px;
+      max-width: 300px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 1rem;
+    }
+    #questionList h2 { margin-bottom: .5rem }
+    .q-item {
+      padding: .5rem;
+      margin-bottom: .5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .q-item.active { background: #e8f4fd; border-color: #3498db; }
+
+    /* Right: builder form + preview */
+    #builder, #preview {
+      flex: 2 1 400px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 1rem;
+    }
+    #builder h2, #preview h2 { margin-top: 0 }
+
+    .form-group {
+      margin-bottom: .75rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: .25rem;
+      font-weight: 500;
+    }
+    .form-group input[type=text],
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: .5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .form-group textarea { resize: vertical; }
+
+    .inline-group {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .inline-group input[type=checkbox] { margin: 0; }
+
+    button {
+      padding: .5rem 1rem;
+      border: none;
+      background: #3498db;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Survey Designer</h1>
+    <p>Build your own survey</p>
+  </header>
+
+  <div class="container">
+    <!-- Question List -->
+    <div id="questionList">
+      <h2>Questions</h2>
+      <div id="questionsContainer">
+        <!-- dynamically populated -->
+      </div>
+      <button id="newQuestionBtn">+ New Question</button>
+    </div>
+
+    <!-- Builder Form -->
+    <div id="builder">
+      <h2 id="formTitle">Add Question</h2>
+      <div class="form-group">
+        <label for="qText">Question Text</label>
+        <input type="text" id="qText"/>
+      </div>
+      <div class="form-group">
+        <label for="qType">Question Type</label>
+        <select id="qType">
+          <option value="">Select type…</option>
+          <option value="multiple-choice">Multiple Choice (single)</option>
+          <option value="rating">Rating Scale (1–5)</option>
+          <option value="text">Open-ended Text</option>
+          <option value="dropdown">Dropdown Selector</option>
+          <option value="checkboxes">Multi-select Checkboxes</option>
+        </select>
+      </div>
+      <div class="form-group" id="optionsGroup" style="display:none;">
+        <label for="qOptions">Options (one per line)</label>
+        <textarea id="qOptions" rows="4"></textarea>
+      </div>
+      <div class="form-group inline-group">
+        <input type="checkbox" id="enableCond"/>
+        <label for="enableCond">Add Conditional Logic</label>
+      </div>
+      <div id="condSettings" style="display:none;">
+        <div class="form-group">
+          <label for="condQuestion">Show this if question:</label>
+          <select id="condQuestion"></select>
+        </div>
+        <div class="form-group">
+          <label for="condValue">has answer:</label>
+          <select id="condValue"></select>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <button id="saveQuestionBtn" disabled>Save Question</button>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="preview">
+      <h2>Preview Survey</h2>
+      <form id="previewForm">
+        <!-- questions render here -->
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // In-memory store
+    let questions = [];
+    let editIndex = null;
+
+    // DOM refs
+    const questionsContainer = document.getElementById('questionsContainer');
+    const newQuestionBtn    = document.getElementById('newQuestionBtn');
+    const formTitle          = document.getElementById('formTitle');
+    const qText              = document.getElementById('qText');
+    const qType              = document.getElementById('qType');
+    const optionsGroup       = document.getElementById('optionsGroup');
+    const qOptions           = document.getElementById('qOptions');
+    const enableCond         = document.getElementById('enableCond');
+    const condSettings       = document.getElementById('condSettings');
+    const condQuestion       = document.getElementById('condQuestion');
+    const condValue          = document.getElementById('condValue');
+    const saveQuestionBtn    = document.getElementById('saveQuestionBtn');
+    const previewForm        = document.getElementById('previewForm');
+
+    // Helpers
+    function resetForm() {
+      editIndex = null;
+      formTitle.textContent = 'Add Question';
+      qText.value = '';
+      qType.value = '';
+      qOptions.value = '';
+      optionsGroup.style.display = 'none';
+      enableCond.checked = false;
+      condSettings.style.display = 'none';
+      saveQuestionBtn.disabled = true;
+    }
+
+    function renderQuestionList() {
+      questionsContainer.innerHTML = '';
+      questions.forEach((q, idx) => {
+        const div = document.createElement('div');
+        div.className = 'q-item';
+        div.textContent = `${idx+1}. ${q.text} (${q.type})`;
+        div.onclick = () => editQuestion(idx);
+        questionsContainer.appendChild(div);
+      });
+      // update conditional question dropdown
+      condQuestion.innerHTML = '<option value="">-- select --</option>';
+      questions.forEach((q, idx) => {
+        condQuestion.innerHTML += `<option value="${idx}">${q.text}</option>`;
+      });
+    }
+
+    function renderPreview() {
+      previewForm.innerHTML = '';
+      questions.forEach((q, idx) => {
+        // conditional wrapper
+        const wrapper = document.createElement('div');
+        wrapper.style.marginBottom = '1rem';
+        if (q.condition) {
+          wrapper.dataset.condQ = q.condition.qIdx;
+          wrapper.dataset.condVal = q.condition.value;
+          wrapper.style.display = 'none';
+        }
+        // label
+        const label = document.createElement('label');
+        label.textContent = q.text;
+        wrapper.appendChild(label);
+
+        // input
+        let input;
+        switch(q.type) {
+          case 'multiple-choice':
+            q.options.forEach(opt => {
+              const r = document.createElement('div');
+              r.innerHTML = `<label><input type="radio" name="q${idx}"> ${opt}</label>`;
+              wrapper.appendChild(r);
+            });
+            break;
+          case 'rating':
+            input = document.createElement('select');
+            [1,2,3,4,5].forEach(n => input.innerHTML += `<option>${n}</option>`);
+            wrapper.appendChild(input);
+            break;
+          case 'text':
+            input = document.createElement('textarea');
+            wrapper.appendChild(input);
+            break;
+          case 'dropdown':
+            input = document.createElement('select');
+            q.options.forEach(opt => input.innerHTML += `<option>${opt}</option>`);
+            wrapper.appendChild(input);
+            break;
+          case 'checkboxes':
+            q.options.forEach(opt => {
+              const c = document.createElement('div');
+              c.innerHTML = `<label><input type="checkbox" name="q${idx}"> ${opt}</label>`;
+              wrapper.appendChild(c);
+            });
+            break;
+        }
+        previewForm.appendChild(wrapper);
+      });
+      attachConditionalLogic();
+    }
+
+    function attachConditionalLogic() {
+      // whenever any input changes, reevaluate visibility
+      previewForm.querySelectorAll('input,select').forEach(el => {
+        el.onchange = () => {
+          previewForm.querySelectorAll('[data-cond-q]').forEach(w => {
+            const qIdx = w.dataset.condQ;
+            const val  = w.dataset.condVal;
+            const inputs = previewForm.querySelectorAll(`[name="q${qIdx}"]`);
+            let ok = false;
+            inputs.forEach(i => {
+              if ((i.type==='radio'||i.type==='checkbox') && i.checked && i.parentNode.textContent.trim()===val) ok = true;
+              if (i.tagName==='SELECT' && i.value===val) ok = true;
+            });
+            w.style.display = ok ? '' : 'none';
+          });
+        }
+      });
+    }
+
+    // Event wiring
+    newQuestionBtn.onclick = resetForm;
+
+    qType.onchange = () => {
+      if (['multiple-choice','dropdown','checkboxes'].includes(qType.value)) {
+        optionsGroup.style.display = '';
+      } else {
+        optionsGroup.style.display = 'none';
+      }
+      saveQuestionBtn.disabled = !qText.value || !qType.value;
+    };
+
+    qText.oninput = () => {
+      saveQuestionBtn.disabled = !(qText.value && qType.value);
+    };
+
+    enableCond.onchange = () => {
+      condSettings.style.display = enableCond.checked ? '' : 'none';
+      // reset selections
+      if (!enableCond.checked) {
+        condQuestion.value = '';
+        condValue.innerHTML = '';
+      }
+    };
+
+    condQuestion.onchange = () => {
+      const qIdx = condQuestion.value;
+      condValue.innerHTML = '<option value="">-- select --</option>';
+      if (qIdx !== '') {
+        questions[qIdx].options.forEach(opt => {
+          condValue.innerHTML += `<option>${opt}</option>`;
+        });
+      }
+    };
+
+    saveQuestionBtn.onclick = () => {
+      const q = {
+        text: qText.value,
+        type: qType.value,
+        options: qOptions.value.split('\n').filter(l => l.trim()),
+        condition: null
+      };
+      if (enableCond.checked && condQuestion.value!=='') {
+        q.condition = {
+          qIdx: condQuestion.value,
+          value: condValue.value
+        };
+      }
+      if (editIndex===null) {
+        questions.push(q);
+      } else {
+        questions[editIndex] = q;
+      }
+      resetForm();
+      renderQuestionList();
+      renderPreview();
+    };
+
+    function editQuestion(idx) {
+      editIndex = idx;
+      const q = questions[idx];
+      formTitle.textContent = 'Edit Question';
+      qText.value = q.text;
+      qType.value = q.type;
+      if (q.options) qOptions.value = q.options.join('\n');
+      optionsGroup.style.display = ['multiple-choice','dropdown','checkboxes'].includes(q.type) ? '' : 'none';
+      if (q.condition) {
+        enableCond.checked = true;
+        condSettings.style.display = '';
+        condQuestion.value = q.condition.qIdx;
+        condQuestion.onchange();
+        condValue.value = q.condition.value;
+      } else {
+        enableCond.checked = false;
+        condSettings.style.display = 'none';
+      }
+      saveQuestionBtn.disabled = false;
+    }
+
+    // init
+    resetForm();
+    renderQuestionList();
+    renderPreview();
+  </script>
+</body>
+</html>
