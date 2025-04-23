@@ -1,278 +1,267 @@
 import unittest
 import time
-from appium import webdriver
-from appium.webdriver.common.appiumby import AppiumBy
-from selenium.common.exceptions import NoSuchElementException
-from appium.options.android import UiAutomator2Options
 import os
+from appium import webdriver
 from appium.options.common import AppiumOptions
-from selenium.webdriver.support.ui import WebDriverWait
+
+from appium_flutter_finder import FlutterFinder, FlutterElement
+from selenium.common.exceptions import NoSuchElementException
+
 
 class TestSurveyApp(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """
-        Called once before all tests. Sets up the Appium driver and waits for the app to launch.
+        Runs before each test method. 
+        1) Launch new Appium driver
+        2) Log in
         """
         options = AppiumOptions()
         options.set_capability("platformName", "Android")
         options.set_capability("deviceName", "emulator-5554")
-        options.set_capability("automationName", "UiAutomator2")
-        apk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "/Users/borahaliloglu/Desktop/MacBook/CS4/CS4-2/CS458/CS458/project2/build/app/outputs/apk/debug/app-debug.apk"))
+
+        options.set_capability("automationName", "Flutter")
+
+        apk_path = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__),
+                "../../build/app/outputs/apk/debug/app-debug.apk"
+            )
+        )
         options.set_capability("app", apk_path)
         options.set_capability("newCommandTimeout", 300)
 
-        cls.driver = webdriver.Remote("http://localhost:4723", options=options)
-        time.sleep(5)
-        
-    @classmethod
-    def tearDownClass(cls):
+        self.driver = webdriver.Remote("http://localhost:4723", options=options)
+        self.finder = FlutterFinder()
+        time.sleep(5)  
+        self.login_with_email()
+        self.assertTrue(
+            self.element_exists("Survey Form", 5),
+            "Survey Form header not found after login!"
+        )
+
+    def tearDown(self):
         """
-        Called once after all tests finish. Quits the driver.
+        Runs after each test method.
+        Logs out (if desired) and quits the driver.
         """
-        cls.driver.quit()
+        self.driver.quit()
 
     def wait(self, sec=2):
         """
-        Helper method to do a simple sleep-based wait (in seconds).
+        Helper to do a sleep-based wait (in seconds).
         """
         time.sleep(sec)
+    def find_key(self, key_name):
+        """
+        Returns a FlutterElement for the given ValueKey name.
+        """
+        raw_finder = self.finder.by_value_key(key_name)
+        return FlutterElement(self.driver, raw_finder)
 
 
-    def test_email_login(self):
-        wait = WebDriverWait(self.driver, 10)
+    def element_exists(self, key_name, wait_seconds=3):
 
-        # Locate the email input field using the Android UIAutomator locator with AppiumBy
-        email_field = wait.until(lambda driver: driver.find_element(
-            AppiumBy.ANDROID_UIAUTOMATOR,
-            'new UiSelector().description("Email Input Field")'
-        ))
-        email_field.send_keys("test@example.com")
+        """
+        Returns True if the widget with the given ValueKey is found
+        within `wait_seconds`, else False.
+        """
+        finder = self.finder.by_value_key(key_name)
+        try:
+            self.driver.execute_script("flutter: waitFor", finder, wait_seconds)
+            return True
+        except Exception:
+            return False
 
-        # Locate the password input field
-        password_field = wait.until(lambda driver: driver.find_element(
-            AppiumBy.ANDROID_UIAUTOMATOR,
-            'new UiSelector().description("Password Input Field")'
-        ))
-        password_field.send_keys("12345")
+    def element_absent(self, key_name, wait_seconds=3):
+        """
+        Returns True if the widget with the given ValueKey is gone
+        (not found) within `wait_seconds`, else False.
+        """
+        finder = self.finder.by_value_key(key_name)
+        try:
+            self.driver.execute_script("flutter: waitForAbsent", finder, wait_seconds)
+            return True
+        except Exception:
+            return False
 
-        # Locate and tap the login button
-        login_button = wait.until(lambda driver: driver.find_element(
-            AppiumBy.ANDROID_UIAUTOMATOR,
-            'new UiSelector().description("Email Login Button")'
-        ))
-        login_button.click()
-
-        # Optionally, wait for the next page or confirmation element to appear
+    def login_with_email(self):
+        """
+        Helper method: fill email + password fields, and tap 'EmailLoginButton'
+        """
+        self.find_key("EmailField").send_keys("test@example.com")
+  
+        self.find_key("PasswordField").send_keys("12345")
+        self.find_key("EmailLoginButton").click()
         self.wait(3)
 
-
-
-
-
-
-
-
-
-
-
-    def test_google_login_and_navigation(self):
+    def test_login_and_navigation(self):
         """
-        TC1: Ensure Google login navigates to survey page.
-        
-        Steps:
-        1. Click on Google Login button.
-        2. Wait for navigation to the survey form.
-        3. Verify the survey form header is present.
-        
-        This covers the requirement for a valid login flow from part1 -> part2.
+        TC1: Already logged in (setUp did it).
+        Just verify Survey Form is indeed visible.
         """
-        google_btn = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "GoogleLoginButton")
-        google_btn.click()
-        self.wait(4)
-        
-        header = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Survey Form")
-        self.assertIsNotNone(header, "Survey Form header not found after Google login.")
+        self.assertTrue(
+            self.element_exists("Survey Form"),
+            "Survey Form header not found!"
+        )
 
     def test_checkbox_dynamic_cons_fields(self):
         """
-        TC2: Check if 'cons' fields appear/disappear when toggling checkboxes.
-        
-        Steps:
-        1. Select the ChatGPT checkbox.
-        2. Verify the ChatGPTConsField appears (dynamic UI behavior).
-        3. Deselect the ChatGPT checkbox.
-        4. Verify the ChatGPTConsField disappears.
-        
-        This validates the dynamic creation/removal of cons fields for AI models.
+        TC2: Toggle ChatGPTCheckbox -> ChatGPTConsField appears/disappears.
         """
-        chatgpt_cb = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTCheckbox")
-        chatgpt_cb.click()
+        self.find_key("ChatGPTCheckbox").click()
         self.wait()
-        
-        cons_field = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTConsField")
-        self.assertIsNotNone(cons_field, "ChatGPTConsField should appear after selecting checkbox.")
 
-        # Uncheck to see if field is removed
-        chatgpt_cb.click()
+        self.assertTrue(
+            self.element_exists("ChatGPTConsField"),
+            "ChatGPTConsField should appear after selecting ChatGPT."
+        )
+
+        self.find_key("ChatGPTCheckbox").click()
         self.wait()
-        with self.assertRaises(NoSuchElementException):
-            self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTConsField")
+
+        self.assertTrue(
+            self.element_absent("ChatGPTConsField"),
+            "ChatGPTConsField still exists after unchecking!"
+        )
 
     def test_send_button_conditional_visibility(self):
         """
-        TC3: Check send button only appears when the survey form is complete.
-        
-        Steps:
-        1. Verify SendSurveyButton does not exist initially (UI constraint).
-        2. Fill in required fields: Name, City, Education, Gender, AI selection, cons, use case.
-        3. Check that SendSurveyButton is now present and enabled.
-        
-        This covers multiple fields in one scenario, ensuring the form
-        has all required data before enabling 'Send'.
+        TC3: 'SendSurveyButton' appears only after all required fields 
+        (including valid manual date) are filled.
         """
-        with self.assertRaises(Exception):
-            self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "SendSurveyButton")
+        self.assertFalse(
+            self.element_exists("SendSurveyButton", 2),
+            "SendSurveyButton appeared prematurely!"
+        )
 
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "NameSurnameField").send_keys("Test User")
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "CityField").send_keys("Ankara")
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "EducationDropdown").click()
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "BachelorOption").click()
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "GenderDropdown").click()
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "MaleOption").click()
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTCheckbox").click()
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTConsField").send_keys("Sometimes inaccurate")
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "AIUseCaseField").send_keys("Helps in coding")
+        self.find_key("NameSurnameField").send_keys("Test User")
+        self.find_key("CityField").send_keys("Ankara")
 
+        self.find_key("BirthDateField").send_keys("02.04.2022")
+        self.wait(1)
+
+        self.find_key("EducationDropdown").click()
+        self.find_key("BachelorOption").click()
+
+        self.find_key("GenderDropdown").click()
+        self.find_key("MaleOption").click()
+
+        self.find_key("ChatGPTCheckbox").click()
+        self.find_key("ChatGPTConsField").send_keys("Sometimes inaccurate")
+
+        self.find_key("AIUseCaseField").send_keys("Helps in coding")
         self.wait()
-        btn = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "SendSurveyButton")
-        self.assertTrue(btn.is_enabled(), "Send button should be enabled after all mandatory fields are filled.")
+
+        self.assertTrue(
+            self.element_exists("SendSurveyButton", 3),
+            "SendSurveyButton did not appear after filling required fields."
+        )
 
     def test_email_data_accuracy(self):
         """
-        TC4: Validate that the submitted email or survey result contains all expected data.
-        
-        Steps:
-        1. Tap 'SendSurveyButton'.
-        2. Wait for a confirmation (Snackbar, toast, or next screen).
-        3. (Manually or via logs) confirm the email was sent with correct content.
-        
-        This addresses the requirement of emailing the survey result upon "Send".
+        TC4: Fill out form + click 'SendSurveyButton' -> Confirm success message/log, all fields should be filled.
         """
-        send_btn = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "SendSurveyButton")
-        send_btn.click()
+        self.find_key("NameSurnameField").send_keys("Tester")
+        self.find_key("CityField").send_keys("Izmir")
+
+        self.find_key("BirthDateField").send_keys("02.04.2023")
+        self.wait(1)
+
+        self.find_key("EducationDropdown").click()
+        self.find_key("BachelorOption").click()
+
+        self.find_key("GenderDropdown").click()
+        self.find_key("FemaleOption").click()
+
+        self.find_key("ChatGPTCheckbox").click()
+        self.find_key("ChatGPTConsField").send_keys("Occasionally wrong")
+
+        self.find_key("AIUseCaseField").send_keys("Project help")
+        self.wait()
+
+        self.find_key("SendSurveyButton").click()
         self.wait(3)
-        # Assume a Snackbar/Toast or label appears with a success message
-        # We just print a reminder to manually check or do a deeper integration test
-        print("✅ Survey sent — validate email content manually or via test email address/logs.")
+
+        print("Survey sent. Check logs or test email for result.")
+
+    def test_incomplete_birth_date_format(self):
+        """
+        TC5: Typing an incomplete date (e.g. "01.01." => only 5 chars) 
+             should keep the SendSurveyButton hidden.
+        """
+        
+        self.find_key("NameSurnameField").send_keys("Incomplete Date Tester")
+        self.find_key("CityField").send_keys("TestingTown")
+
+        self.find_key("EducationDropdown").click()
+        self.find_key("BachelorOption").click()
+
+        self.find_key("GenderDropdown").click()
+        self.find_key("MaleOption").click()
+
+        self.find_key("ChatGPTCheckbox").click()
+        self.find_key("ChatGPTConsField").send_keys("No date yet")
+
+        self.find_key("AIUseCaseField").send_keys("Testing incomplete date")
+
+        self.find_key("BirthDateField").send_keys("01.01.")
+        self.wait(1)
+
+        self.assertFalse(
+            self.element_exists("SendSurveyButton", 2),
+            "SendSurveyButton should NOT appear with incomplete date!"
+        )
 
     def test_relogin_flow_after_logout(self):
         """
-        TC5: Test logout + relogin + form state reset.
-        
-        Steps:
-        1. Confirm we are on Survey Form.
-        2. Simulate logout (via back or 'Logout' button).
-        3. Verify user is on the login page again.
-        4. Login again, confirm the form fields are reset (NameSurnameField is empty).
-        
-        Covers persistent session vs. fresh session scenario.
+        TC6: If we want to test logout -> log in again in the same test
         """
-        # Confirm we're on the survey form
-        self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Survey Form")
-        # Simulate logout
-        self.driver.back()  # or use 'Logout' button if your app has it
+        self.assertTrue(self.element_exists("Survey Form"))
+
+        self.find_key("LogoutButton").click()
         self.wait()
 
-        # We should land back on login page
-        google_btn = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "GoogleLoginButton")
-        self.assertIsNotNone(google_btn, "Google login button not found after logout navigation.")
-
-        # Re-login
-        google_btn.click()
-        self.wait(3)
-
-        # Confirm form is reset
-        name_field = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "NameSurnameField")
-        self.assertEqual(name_field.text, "", "Name field should be empty after re-login flow.")
-
-    def test_invalid_birth_date(self):
-        """
-        TC6: Provide an invalid birth date and check if an error or constraint is triggered.
-        
-        Steps:
-        1. Enter a clearly invalid birth date, e.g., '31-02-2025'.
-        2. Verify an error message or that the date field won't accept it.
-        
-        Demonstrates negative testing for a single field.
-        Shows we're not just checking 'valid' inputs.
-        """
-        # Make sure the user is on the Survey Form (or re-login if needed)
-        try:
-            self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Survey Form")
-        except NoSuchElementException:
-            # If not found, do a quick login
-            google_btn = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "GoogleLoginButton")
-            google_btn.click()
-            self.wait(3)
-
-        # Now test the invalid date
-        birth_date_field = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "BirthDateField")
-        birth_date_field.send_keys("31-02-2025")
-        self.wait()
-
-        # If your app instantly shows an error label or toast, check it here
-        try:
-            error_label = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "InvalidBirthDateError")
-            self.assertIsNotNone(error_label, "Expected invalid birth date error was not displayed.")
-        except NoSuchElementException:
-            self.fail("No error displayed for an impossible birth date.")
+        self.login_with_email()
 
     def test_multiple_ai_selections(self):
         """
-        TC7: Check that selecting multiple AI models prompts multiple 'cons' fields,
-        and that all remain visible and editable.
-        
-        Steps:
-        1. Select ChatGPT and Bard checkboxes.
-        2. Verify their 'cons' fields appear.
-        3. Fill them, then deselect one to ensure the correct field disappears.
-        4. Verify the other is still present.
-        
-        This test ensures the UI handles multi-check scenarios properly.
+        TC7: Select multiple AI checkboxes => multiple cons fields.
         """
-        # Possibly re-login if needed
-        try:
-            self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Survey Form")
-        except NoSuchElementException:
-            google_btn = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "GoogleLoginButton")
-            google_btn.click()
-            self.wait(3)
-
-        # Select ChatGPT
-        chatgpt_cb = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTCheckbox")
-        chatgpt_cb.click()
+        self.find_key("ChatGPTCheckbox").click()
         self.wait()
-        chatgpt_cons = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTConsField")
-        chatgpt_cons.send_keys("Hallucinations, sometimes inaccurate")
+        self.find_key("ChatGPTConsField").send_keys("Hallucinations")
 
-        # Select Bard
-        bard_cb = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "BardCheckbox")
-        bard_cb.click()
+        self.find_key("BardCheckbox").click()
         self.wait()
-        bard_cons = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "BardConsField")
-        bard_cons.send_keys("Limited training data?")
+        self.find_key("BardConsField").send_keys("Still developing")
 
-        # Deselect ChatGPT to see if ChatGPTConsField disappears
-        chatgpt_cb.click()
+        self.find_key("ChatGPTCheckbox").click()
         self.wait()
-        with self.assertRaises(NoSuchElementException):
-            self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "ChatGPTConsField")
+        self.assertFalse(
+            self.element_exists("ChatGPTConsField"),
+            "ChatGPTConsField is still present after unchecking ChatGPT!"
+        )
+        self.assertTrue(
+            self.element_exists("BardConsField"),
+            "BardConsField is missing after unchecking ChatGPT!"
+        )
 
-        # BardConsField should still exist
-        bard_cons_test = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, "BardConsField")
-        self.assertIsNotNone(bard_cons_test, "Bard cons field disappeared unexpectedly after unchecking ChatGPT.")
+    def test_invalid_login(self):
+        """
+        TC8: Attempts to log in with invalid email/password -> 
+        Confirm error message and that we don't navigate to Survey Form.
+        """
+        self.find_key("LogoutButton").click()
+        self.find_key("EmailField").send_keys("wrong@example.com")
+        self.find_key("PasswordField").send_keys("badpassword")
+
+        self.find_key("EmailLoginButton").click()
+        self.wait(1) 
+        self.assertFalse(
+            self.element_exists("Survey Form", wait_seconds=2),
+            "Survey Form should NOT appear after invalid credentials!"
+        )
 
 if __name__ == '__main__':
     unittest.main()

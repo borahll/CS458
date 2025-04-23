@@ -1,20 +1,30 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'login_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_driver/driver_extension.dart';
+
 import 'firebase_options.dart';
+import 'login_page.dart';
+
 void main() async {
+  // Enable Flutter Driver extension for integration testing
+  enableFlutterDriverExtension();
+  print("✅ Flutter Driver extension enabled");
+  // Required to initialize bindings before Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Run the app
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: LoginPage(),
     );
