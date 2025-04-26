@@ -1,3 +1,4 @@
+<!-- designer.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,87 +6,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Survey Designer</title>
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: #f4f4f4;
-      margin: 0; padding: 0;
+    body { font-family: "Segoe UI", sans-serif; background: #f4f4f4; margin:0; padding:0; }
+    header { background: #3498db; color:#fff; padding:1rem; text-align:center; }
+    .container { display:flex; flex-wrap:wrap; padding:1rem; gap:1rem; }
+    #questionList, #builder, #preview {
+      background:#fff; border-radius:6px; box-shadow:0 0 5px rgba(0,0,0,0.1); padding:1rem;
     }
-    header {
-      background: #3498db;
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
+    #questionList { flex:1 1 200px; max-width:300px; }
+    #builder, #preview { flex:2 1 400px; }
+    .q-item { padding:.5rem; margin-bottom:.5rem; border:1px solid #ddd; border-radius:4px; cursor:pointer; }
+    .q-item.active { background:#e8f4fd; border-color:#3498db; }
+    .form-group { margin-bottom:.75rem; }
+    .form-group label { display:block; margin-bottom:.25rem; font-weight:500; }
+    .form-group input[type=text], .form-group textarea, .form-group select {
+      width:100%; padding:.5rem; border:1px solid #ccc; border-radius:4px;
     }
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      padding: 1rem;
-      gap: 1rem;
-    }
-    /* Left: question list */
-    #questionList {
-      flex: 1 1 200px;
-      max-width: 300px;
-      background: #fff;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      padding: 1rem;
-    }
-    #questionList h2 { margin-bottom: .5rem }
-    .q-item {
-      padding: .5rem;
-      margin-bottom: .5rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .q-item.active { background: #e8f4fd; border-color: #3498db; }
-
-    /* Right: builder form + preview */
-    #builder, #preview {
-      flex: 2 1 400px;
-      background: #fff;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      padding: 1rem;
-    }
-    #builder h2, #preview h2 { margin-top: 0 }
-
-    .form-group {
-      margin-bottom: .75rem;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: .25rem;
-      font-weight: 500;
-    }
-    .form-group input[type=text],
-    .form-group textarea,
-    .form-group select {
-      width: 100%;
-      padding: .5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .form-group textarea { resize: vertical; }
-
-    .inline-group {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-    }
-    .inline-group input[type=checkbox] { margin: 0; }
-
-    button {
-      padding: .5rem 1rem;
-      border: none;
-      background: #3498db;
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    button:disabled { background: #aaa; cursor: not-allowed; }
+    .form-group textarea { resize:vertical; }
+    .inline-group { display:flex; align-items:center; gap:.5rem; }
+    button { padding:.5rem 1rem; border:none; background:#3498db; color:#fff; border-radius:4px; cursor:pointer; font-weight:500; }
+    button:disabled { background:#aaa; cursor:not-allowed; }
   </style>
 </head>
 <body>
@@ -96,12 +35,11 @@
   </header>
 
   <div class="container">
+
     <!-- Question List -->
     <div id="questionList">
       <h2>Questions</h2>
-      <div id="questionsContainer">
-        <!-- dynamically populated -->
-      </div>
+      <div id="questionsContainer"></div>
       <button id="newQuestionBtn">+ New Question</button>
     </div>
 
@@ -149,55 +87,50 @@
     <!-- Preview + Export/Import -->
     <div id="preview">
       <h2>Preview Survey</h2>
-      <form id="previewForm">
-        <!-- questions render here -->
-      </form>
+      <form id="previewForm"></form>
 
-      <!-- Create Survey Code -->
       <div style="text-align:center; margin-top:1rem;">
         <button id="createSurveyBtn" disabled>Create Survey</button>
+        <button id="goToSurveyBtn" disabled>Go To Survey</button>
       </div>
+
       <div id="surveyCodeContainer" style="display:none; margin-top:1rem; text-align:center;">
         <label for="surveyCode"><strong>Survey Code:</strong></label><br/>
         <textarea id="surveyCode" readonly rows="3" style="width:80%;"></textarea>
       </div>
 
-      <!-- Load Survey from Code -->
       <div style="text-align:center; margin-top:1rem;">
         <input type="text" id="loadSurveyCode" placeholder="Paste survey code here" style="width:60%;"/>
         <button id="loadSurveyBtn">Load Survey</button>
       </div>
     </div>
+
   </div>
 
   <script>
-    // In-memory store
-    let questions = [];
-    let editIndex = null;
+    let questions = [], editIndex = null;
 
-    // DOM refs
-    const questionsContainer = document.getElementById('questionsContainer');
-    const newQuestionBtn    = document.getElementById('newQuestionBtn');
-    const formTitle          = document.getElementById('formTitle');
-    const qText              = document.getElementById('qText');
-    const qType              = document.getElementById('qType');
-    const optionsGroup       = document.getElementById('optionsGroup');
-    const qOptions           = document.getElementById('qOptions');
-    const enableCond         = document.getElementById('enableCond');
-    const condSettings       = document.getElementById('condSettings');
-    const condQuestion       = document.getElementById('condQuestion');
-    const condValue          = document.getElementById('condValue');
-    const saveQuestionBtn    = document.getElementById('saveQuestionBtn');
-    const previewForm        = document.getElementById('previewForm');
-
-    // New DOM refs for export/import
+    // DOM references
+    const questionsContainer  = document.getElementById('questionsContainer');
+    const newQuestionBtn      = document.getElementById('newQuestionBtn');
+    const formTitle           = document.getElementById('formTitle');
+    const qText               = document.getElementById('qText');
+    const qType               = document.getElementById('qType');
+    const optionsGroup        = document.getElementById('optionsGroup');
+    const qOptions            = document.getElementById('qOptions');
+    const enableCond          = document.getElementById('enableCond');
+    const condSettings        = document.getElementById('condSettings');
+    const condQuestion        = document.getElementById('condQuestion');
+    const condValue           = document.getElementById('condValue');
+    const saveQuestionBtn     = document.getElementById('saveQuestionBtn');
+    const previewForm         = document.getElementById('previewForm');
     const createSurveyBtn     = document.getElementById('createSurveyBtn');
+    const goToSurveyBtn       = document.getElementById('goToSurveyBtn');
     const surveyCodeContainer = document.getElementById('surveyCodeContainer');
     const surveyCode          = document.getElementById('surveyCode');
     const loadSurveyCode      = document.getElementById('loadSurveyCode');
     const loadSurveyBtn       = document.getElementById('loadSurveyBtn');
 
-    // Helpers
     function resetForm() {
       editIndex = null;
       formTitle.textContent = 'Add Question';
@@ -208,85 +141,85 @@
       enableCond.checked = false;
       condSettings.style.display = 'none';
       saveQuestionBtn.disabled = true;
-      // Hide/disable export controls
+
       createSurveyBtn.disabled = true;
+      goToSurveyBtn.disabled     = true;
       surveyCodeContainer.style.display = 'none';
     }
 
     function renderQuestionList() {
       questionsContainer.innerHTML = '';
-      questions.forEach((q, idx) => {
+      questions.forEach((q, i) => {
         const div = document.createElement('div');
         div.className = 'q-item';
-        div.textContent = `${idx+1}. ${q.text} (${q.type})`;
-        div.onclick = () => editQuestion(idx);
+        div.textContent = `${i+1}. ${q.text} (${q.type})`;
+        div.onclick = () => editQuestion(i);
         questionsContainer.appendChild(div);
       });
-      // update conditional question dropdown
       condQuestion.innerHTML = '<option value="">-- select --</option>';
-      questions.forEach((q, idx) => {
-        condQuestion.innerHTML += `<option value="${idx}">${q.text}</option>`;
+      questions.forEach((q, i) => {
+        condQuestion.innerHTML += `<option value="${i}">${q.text}</option>`;
       });
     }
 
     function renderPreview() {
       previewForm.innerHTML = '';
-      questions.forEach((q, idx) => {
-        const wrapper = document.createElement('div');
-        wrapper.style.marginBottom = '1rem';
+      questions.forEach((q, i) => {
+        const wrap = document.createElement('div');
+        wrap.style.marginBottom = '1rem';
         if (q.condition) {
-          wrapper.dataset.condQ = q.condition.qIdx;
-          wrapper.dataset.condVal = q.condition.value;
-          wrapper.style.display = 'none';
+          wrap.dataset.condQ   = q.condition.qIdx;
+          wrap.dataset.condVal = q.condition.value;
+          wrap.style.display   = 'none';
         }
         const label = document.createElement('label');
         label.textContent = q.text;
-        wrapper.appendChild(label);
+        wrap.appendChild(label);
 
         switch(q.type) {
           case 'multiple-choice':
             q.options.forEach(opt => {
-              const r = document.createElement('div');
-              r.innerHTML = `<label><input type="radio" name="q${idx}"> ${opt}</label>`;
-              wrapper.appendChild(r);
+              const d = document.createElement('div');
+              d.innerHTML = `<label><input type="radio" name="q${i}" value="${opt}"> ${opt}</label>`;
+              wrap.appendChild(d);
             });
             break;
           case 'rating':
             const sel = document.createElement('select');
+            sel.name = `q${i}`;
             [1,2,3,4,5].forEach(n => sel.innerHTML += `<option>${n}</option>`);
-            wrapper.appendChild(sel);
+            wrap.appendChild(sel);
             break;
           case 'text':
-            wrapper.appendChild(document.createElement('textarea'));
+            const ta = document.createElement('textarea');
+            ta.name = `q${i}`;
+            wrap.appendChild(ta);
             break;
           case 'dropdown':
             const dd = document.createElement('select');
+            dd.name = `q${i}`;
             q.options.forEach(opt => dd.innerHTML += `<option>${opt}</option>`);
-            wrapper.appendChild(dd);
+            wrap.appendChild(dd);
             break;
           case 'checkboxes':
             q.options.forEach(opt => {
-              const c = document.createElement('div');
-              c.innerHTML = `<label><input type="checkbox" name="q${idx}"> ${opt}</label>`;
-              wrapper.appendChild(c);
+              const cd = document.createElement('div');
+              cd.innerHTML = `<label><input type="checkbox" name="q${i}" value="${opt}"> ${opt}</label>`;
+              wrap.appendChild(cd);
             });
             break;
         }
-        previewForm.appendChild(wrapper);
+        previewForm.appendChild(wrap);
       });
-      attachConditionalLogic();
-    }
-
-    function attachConditionalLogic() {
+      // conditional
       previewForm.querySelectorAll('input,select').forEach(el => {
         el.onchange = () => {
           previewForm.querySelectorAll('[data-cond-q]').forEach(w => {
-            const qIdx = w.dataset.condQ;
-            const val  = w.dataset.condVal;
-            const inputs = previewForm.querySelectorAll(`[name="q${qIdx}"]`);
+            const idx = w.dataset.condQ, val = w.dataset.condVal;
+            const inputs = previewForm.querySelectorAll(`[name="q${idx}"]`);
             let ok = false;
             inputs.forEach(i => {
-              if ((i.type==='radio'||i.type==='checkbox') && i.checked && i.parentNode.textContent.trim()===val) ok = true;
+              if ((i.type==='radio'||i.type==='checkbox') && i.checked && i.value===val) ok = true;
               if (i.tagName==='SELECT' && i.value===val) ok = true;
             });
             w.style.display = ok ? '' : 'none';
@@ -295,32 +228,22 @@
       });
     }
 
-    // Event wiring
+    // wiring
     newQuestionBtn.onclick = resetForm;
-
     qType.onchange = () => {
-      optionsGroup.style.display = ['multiple-choice','dropdown','checkboxes'].includes(qType.value) ? '' : 'none';
+      optionsGroup.style.display = ['multiple-choice','dropdown','checkboxes'].includes(qType.value)?'':'none';
       saveQuestionBtn.disabled = !(qText.value && qType.value);
     };
-
-    qText.oninput = () => {
-      saveQuestionBtn.disabled = !(qText.value && qType.value);
-    };
-
+    qText.oninput = () => saveQuestionBtn.disabled = !(qText.value && qType.value);
     enableCond.onchange = () => {
-      condSettings.style.display = enableCond.checked ? '' : 'none';
-      if (!enableCond.checked) {
-        condQuestion.value = '';
-        condValue.innerHTML = '';
-      }
+      condSettings.style.display = enableCond.checked?'':'none';
+      if (!enableCond.checked) { condQuestion.value=''; condValue.innerHTML=''; }
     };
-
     condQuestion.onchange = () => {
       condValue.innerHTML = '<option value="">-- select --</option>';
       if (condQuestion.value!=='') {
-        questions[condQuestion.value].options.forEach(opt => {
-          condValue.innerHTML += `<option>${opt}</option>`;
-        });
+        questions[condQuestion.value].options.forEach(opt =>
+          condValue.innerHTML += `<option>${opt}</option>`);
       }
     };
 
@@ -328,14 +251,11 @@
       const q = {
         text: qText.value,
         type: qType.value,
-        options: qOptions.value.split('\n').filter(l => l.trim()),
+        options: qOptions.value.split('\n').filter(l=>l.trim()),
         condition: null
       };
       if (enableCond.checked && condQuestion.value!=='') {
-        q.condition = {
-          qIdx: condQuestion.value,
-          value: condValue.value
-        };
+        q.condition = { qIdx: condQuestion.value, value: condValue.value };
       }
       if (editIndex===null) questions.push(q);
       else questions[editIndex] = q;
@@ -344,18 +264,18 @@
       renderQuestionList();
       renderPreview();
 
-      // Enable the Create Survey button once there's at least 1 question
-      createSurveyBtn.disabled = questions.length === 0;
+      createSurveyBtn.disabled = questions.length===0;
+      goToSurveyBtn.disabled   = questions.length===0;
     };
 
-    function editQuestion(idx) {
-      editIndex = idx;
-      const q = questions[idx];
+    function editQuestion(i) {
+      editIndex = i;
+      const q = questions[i];
       formTitle.textContent = 'Edit Question';
       qText.value = q.text;
       qType.value = q.type;
-      qOptions.value = q.options ? q.options.join('\n') : '';
-      optionsGroup.style.display = ['multiple-choice','dropdown','checkboxes'].includes(q.type) ? '' : 'none';
+      qOptions.value = q.options.join('\n');
+      optionsGroup.style.display = ['multiple-choice','dropdown','checkboxes'].includes(q.type)?'':'none';
       if (q.condition) {
         enableCond.checked = true;
         condSettings.style.display = '';
@@ -369,32 +289,53 @@
       saveQuestionBtn.disabled = false;
     }
 
-    // Create Survey code (JSON → Base64)
     createSurveyBtn.onclick = () => {
-      const json = JSON.stringify(questions);
+      const json    = JSON.stringify(questions);
       const encoded = btoa(unescape(encodeURIComponent(json)));
       surveyCode.value = encoded;
       surveyCodeContainer.style.display = '';
+      createSurveyBtn.disabled = false;
+      goToSurveyBtn.disabled   = false;
     };
 
-    // Load Survey from code (Base64 → JSON)
+    goToSurveyBtn.onclick = () => {
+      const code = surveyCode.value;
+      if (!code) return alert('Please create or load a survey first.');
+      window.open(`survey.html?code=${encodeURIComponent(code)}`, '_blank');
+    };
+
     loadSurveyBtn.onclick = () => {
       try {
-        const json = decodeURIComponent(escape(atob(loadSurveyCode.value)));
-        const loaded = JSON.parse(json);
-        questions = loaded;
-        resetForm();
+        const raw     = loadSurveyCode.value.trim();
+        const decoded= decodeURIComponent(escape(atob(raw)));
+        questions = JSON.parse(decoded);
+
+        // reset builder inputs only (don’t hide the code)
+        editIndex = null;
+        formTitle.textContent = 'Add Question';
+        qText.value = ''; qType.value = ''; qOptions.value = '';
+        optionsGroup.style.display = 'none';
+        enableCond.checked = false; condSettings.style.display = 'none';
+        saveQuestionBtn.disabled = true;
+
         renderQuestionList();
         renderPreview();
-      } catch (err) {
+
+        // populate & show the textarea so Go To Survey works
+        surveyCode.value = raw;
+        surveyCodeContainer.style.display = '';
+        createSurveyBtn.disabled = false;
+        goToSurveyBtn.disabled   = false;
+      } catch {
         alert('Invalid survey code. Make sure you pasted the entire string.');
       }
     };
 
-    // Initialize
+    // init
     resetForm();
     renderQuestionList();
     renderPreview();
   </script>
+
 </body>
 </html>
