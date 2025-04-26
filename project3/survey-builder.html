@@ -146,12 +146,27 @@
       </div>
     </div>
 
-    <!-- Preview -->
+    <!-- Preview + Export/Import -->
     <div id="preview">
       <h2>Preview Survey</h2>
       <form id="previewForm">
         <!-- questions render here -->
       </form>
+
+      <!-- Create Survey Code -->
+      <div style="text-align:center; margin-top:1rem;">
+        <button id="createSurveyBtn" disabled>Create Survey</button>
+      </div>
+      <div id="surveyCodeContainer" style="display:none; margin-top:1rem; text-align:center;">
+        <label for="surveyCode"><strong>Survey Code:</strong></label><br/>
+        <textarea id="surveyCode" readonly rows="3" style="width:80%;"></textarea>
+      </div>
+
+      <!-- Load Survey from Code -->
+      <div style="text-align:center; margin-top:1rem;">
+        <input type="text" id="loadSurveyCode" placeholder="Paste survey code here" style="width:60%;"/>
+        <button id="loadSurveyBtn">Load Survey</button>
+      </div>
     </div>
   </div>
 
@@ -175,6 +190,13 @@
     const saveQuestionBtn    = document.getElementById('saveQuestionBtn');
     const previewForm        = document.getElementById('previewForm');
 
+    // New DOM refs for export/import
+    const createSurveyBtn     = document.getElementById('createSurveyBtn');
+    const surveyCodeContainer = document.getElementById('surveyCodeContainer');
+    const surveyCode          = document.getElementById('surveyCode');
+    const loadSurveyCode      = document.getElementById('loadSurveyCode');
+    const loadSurveyBtn       = document.getElementById('loadSurveyBtn');
+
     // Helpers
     function resetForm() {
       editIndex = null;
@@ -186,6 +208,9 @@
       enableCond.checked = false;
       condSettings.style.display = 'none';
       saveQuestionBtn.disabled = true;
+      // Hide/disable export controls
+      createSurveyBtn.disabled = true;
+      surveyCodeContainer.style.display = 'none';
     }
 
     function renderQuestionList() {
@@ -207,7 +232,6 @@
     function renderPreview() {
       previewForm.innerHTML = '';
       questions.forEach((q, idx) => {
-        // conditional wrapper
         const wrapper = document.createElement('div');
         wrapper.style.marginBottom = '1rem';
         if (q.condition) {
@@ -215,13 +239,10 @@
           wrapper.dataset.condVal = q.condition.value;
           wrapper.style.display = 'none';
         }
-        // label
         const label = document.createElement('label');
         label.textContent = q.text;
         wrapper.appendChild(label);
 
-        // input
-        let input;
         switch(q.type) {
           case 'multiple-choice':
             q.options.forEach(opt => {
@@ -231,18 +252,17 @@
             });
             break;
           case 'rating':
-            input = document.createElement('select');
-            [1,2,3,4,5].forEach(n => input.innerHTML += `<option>${n}</option>`);
-            wrapper.appendChild(input);
+            const sel = document.createElement('select');
+            [1,2,3,4,5].forEach(n => sel.innerHTML += `<option>${n}</option>`);
+            wrapper.appendChild(sel);
             break;
           case 'text':
-            input = document.createElement('textarea');
-            wrapper.appendChild(input);
+            wrapper.appendChild(document.createElement('textarea'));
             break;
           case 'dropdown':
-            input = document.createElement('select');
-            q.options.forEach(opt => input.innerHTML += `<option>${opt}</option>`);
-            wrapper.appendChild(input);
+            const dd = document.createElement('select');
+            q.options.forEach(opt => dd.innerHTML += `<option>${opt}</option>`);
+            wrapper.appendChild(dd);
             break;
           case 'checkboxes':
             q.options.forEach(opt => {
@@ -258,7 +278,6 @@
     }
 
     function attachConditionalLogic() {
-      // whenever any input changes, reevaluate visibility
       previewForm.querySelectorAll('input,select').forEach(el => {
         el.onchange = () => {
           previewForm.querySelectorAll('[data-cond-q]').forEach(w => {
@@ -272,7 +291,7 @@
             });
             w.style.display = ok ? '' : 'none';
           });
-        }
+        };
       });
     }
 
@@ -280,12 +299,8 @@
     newQuestionBtn.onclick = resetForm;
 
     qType.onchange = () => {
-      if (['multiple-choice','dropdown','checkboxes'].includes(qType.value)) {
-        optionsGroup.style.display = '';
-      } else {
-        optionsGroup.style.display = 'none';
-      }
-      saveQuestionBtn.disabled = !qText.value || !qType.value;
+      optionsGroup.style.display = ['multiple-choice','dropdown','checkboxes'].includes(qType.value) ? '' : 'none';
+      saveQuestionBtn.disabled = !(qText.value && qType.value);
     };
 
     qText.oninput = () => {
@@ -294,7 +309,6 @@
 
     enableCond.onchange = () => {
       condSettings.style.display = enableCond.checked ? '' : 'none';
-      // reset selections
       if (!enableCond.checked) {
         condQuestion.value = '';
         condValue.innerHTML = '';
@@ -302,10 +316,9 @@
     };
 
     condQuestion.onchange = () => {
-      const qIdx = condQuestion.value;
       condValue.innerHTML = '<option value="">-- select --</option>';
-      if (qIdx !== '') {
-        questions[qIdx].options.forEach(opt => {
+      if (condQuestion.value!=='') {
+        questions[condQuestion.value].options.forEach(opt => {
           condValue.innerHTML += `<option>${opt}</option>`;
         });
       }
@@ -324,14 +337,15 @@
           value: condValue.value
         };
       }
-      if (editIndex===null) {
-        questions.push(q);
-      } else {
-        questions[editIndex] = q;
-      }
+      if (editIndex===null) questions.push(q);
+      else questions[editIndex] = q;
+
       resetForm();
       renderQuestionList();
       renderPreview();
+
+      // Enable the Create Survey button once there's at least 1 question
+      createSurveyBtn.disabled = questions.length === 0;
     };
 
     function editQuestion(idx) {
@@ -340,7 +354,7 @@
       formTitle.textContent = 'Edit Question';
       qText.value = q.text;
       qType.value = q.type;
-      if (q.options) qOptions.value = q.options.join('\n');
+      qOptions.value = q.options ? q.options.join('\n') : '';
       optionsGroup.style.display = ['multiple-choice','dropdown','checkboxes'].includes(q.type) ? '' : 'none';
       if (q.condition) {
         enableCond.checked = true;
@@ -355,7 +369,29 @@
       saveQuestionBtn.disabled = false;
     }
 
-    // init
+    // Create Survey code (JSON → Base64)
+    createSurveyBtn.onclick = () => {
+      const json = JSON.stringify(questions);
+      const encoded = btoa(unescape(encodeURIComponent(json)));
+      surveyCode.value = encoded;
+      surveyCodeContainer.style.display = '';
+    };
+
+    // Load Survey from code (Base64 → JSON)
+    loadSurveyBtn.onclick = () => {
+      try {
+        const json = decodeURIComponent(escape(atob(loadSurveyCode.value)));
+        const loaded = JSON.parse(json);
+        questions = loaded;
+        resetForm();
+        renderQuestionList();
+        renderPreview();
+      } catch (err) {
+        alert('Invalid survey code. Make sure you pasted the entire string.');
+      }
+    };
+
+    // Initialize
     resetForm();
     renderQuestionList();
     renderPreview();
