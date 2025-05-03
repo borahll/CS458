@@ -20,7 +20,7 @@ def setUpModule():
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    #options.add_argument("--headless")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(options=options)
