@@ -19,12 +19,24 @@ def setUpModule():
         ["python3", "-m", "http.server", "3000"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
+
+    from selenium.webdriver.chrome.service import Service
+    import shutil
+    import sys
+
     options = webdriver.ChromeOptions()
-    #options.add_argument("--headless")
+    # options.add_argument("--headless")  # Uncomment if you want headless testing
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
-    driver = webdriver.Chrome(options=options)
+
+    chromedriver_path = shutil.which("chromedriver")
+    if not chromedriver_path:
+        sys.exit("❌ ChromeDriver not found in PATH. Make sure it is installed and available.")
+
+    service = Service(chromedriver_path)
+    driver = webdriver.Chrome(service=service, options=options)
     wait = WebDriverWait(driver, 5)
+
 
 def tearDownModule():
     """Stop browser and HTTP server."""
