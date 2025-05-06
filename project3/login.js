@@ -1,4 +1,3 @@
-// Mock user data (in real scenarios, you would fetch from a server or database)
 const mockUserData = [
   {
     emailOrPhone: "testuser@example.com",
@@ -52,8 +51,7 @@ loginForm.addEventListener("submit", function (event) {
 
 // Mock Google login
 googleBtn.addEventListener("click", function () {
-  // In a real app, you'd integrate Google OAuth2.
-  // For demonstration, we just show a success message:
+
   displayMessage("Google sign-in successful (mock).", "success");
 });
 
